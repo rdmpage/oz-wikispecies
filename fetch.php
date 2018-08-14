@@ -11,44 +11,47 @@ $force = true;
 
 $page_names = array();
 
-$dois=array('10.4039/Ent112875-9');
-
-foreach ($dois as $doi)
+if (0)
 {
-	$parameters = array
-	(
-		'action'  => 'query',
-		'format'  => 'json',
-		'list'	  => 'exturlusage',
-		'euquery' => 'dx.doi.org/' . urlencode($doi)
-	);
-	
-	$url = 'https://species.wikimedia.org/w/api.php?' . http_build_query($parameters);
-	
-	$json = get($url);
-	
-	if ($json != '')
+	$dois=array('10.4039/Ent112875-9');
+
+	$dois = array('10.11646/zootaxa.3680.1.12');
+
+	foreach ($dois as $doi)
 	{
-		$obj = json_decode($json);
-		
-		print_r($obj);
-		
-		foreach ($obj->query->exturlusage as $hit)
+		$parameters = array
+		(
+			'action'  => 'query',
+			'format'  => 'json',
+			'list'	  => 'exturlusage',
+			'euquery' => 'dx.doi.org/' . urlencode($doi)
+		);
+	
+		$url = 'https://species.wikimedia.org/w/api.php?' . http_build_query($parameters);
+	
+		$json = get($url);
+	
+		if ($json != '')
 		{
-			if ($hit)
+			$obj = json_decode($json);
+		
+			print_r($obj);
+		
+			foreach ($obj->query->exturlusage as $hit)
 			{
-				$page_names[] = str_replace(' ', '_', $hit->title);
+				if ($hit)
+				{
+					$page_names[] = str_replace(' ', '_', $hit->title);
+				}
 			}
 		}
+
 	}
 
+	print_r($page_names);
 }
 
-print_r($titles);
-
-
-//$page_names = array('Template:Hamilton,_1980');
-
+$page_names = array('Kylie_S._Stumkat');
 
 $include_transclusions = true;
 
@@ -169,7 +172,7 @@ while (count($page_names) > 0)
 	
 	process_references($obj, true);
 									
-	$include_transclusions = false; // only do this the first time
+	//$include_transclusions = false; // only do this the first time
 
 }
 

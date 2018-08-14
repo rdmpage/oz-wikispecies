@@ -1,0 +1,245 @@
+<html>
+	<head>
+		<title>ORCID work DOI to author role</title>
+		<meta charset="UTF-8"/>
+		<script src="jquery.js"></script>
+		<script src="jsonld.js"></script>
+		<script src="viz.js"></script>
+		<!-- stuff below needs to go into CouchDB views -->
+		<script src="shared.js"></script>
+		<script src="language.js"></script>
+		<style>
+		td { border: 1px solid red; }
+		</style>
+	</head>
+<body>
+
+<h1>ORCID work DOI to author role</h1>
+
+<div>
+	<div style="width:100%;height:auto;">
+		<h2>JSON</h2>
+			<!-- JSON for data object goes below -->
+			<textarea id="json" style="width:100%;background-color:#224FBC;color:#FFFF66;" rows="20">
+{
+  "_id": "0000-0001-8630-3114/work/35369708",
+  "_rev": "1-5138b008659423492033bdd933241096",
+  "message-format": "application/vnd.citationstyles.csl+json",
+  "message": {
+    "id": "EWART_2015",
+    "type": "article-journal",
+    "author": [
+      {
+        "family": "EWART",
+        "given": "A.",
+        "literal": "A. EWART"
+      },
+      {
+        "family": "POPPLE",
+        "given": "L.W.",
+        "literal": "L.W. POPPLE",
+        "ORCID": "0000-0001-8630-3114"
+      },
+      {
+        "family": "MARSHALL",
+        "given": "D.C.",
+        "literal": "D.C. MARSHALL"
+      }
+    ],
+    "event-date": {
+      "date-parts": [
+        [
+          2015,
+          8
+        ]
+      ]
+    },
+    "issued": {
+      "date-parts": [
+        [
+          2015,
+          8
+        ]
+      ]
+    },
+    "collection-title": "Zootaxa",
+    "container-title": "Zootaxa",
+    "DOI": "10.11646/zootaxa.4001.1.1",
+    "issue": "1",
+    "number": "1",
+    "number-of-pages": "1",
+    "page": "1",
+    "page-first": "1",
+    "publisher": "Magnolia Press",
+    "title": "<strong>New species of <em>Simona</em> Moulds, 2012 and <em>Chelapsalta</em> Moulds, 2012 cicadas (Cicadidae: Cicadettinae: Cicadettini) from Australia: comparative morphology, songs, behaviour and distributions</strong>",
+    "URL": "https://doi.org/10.11646%2Fzootaxa.4001.1.1",
+    "volume": "4001"
+  }
+}			
+			</textarea>
+			<br />
+			<button onclick="convert()">Convert JSON to RDF</button>
+	</div>
+	<div style="clear:both;"></div>
+	
+	<div style="width:100%;">
+		<h2>Triples</h2>
+		<div id="output" style="width:100%;background-color:#FF7;color:#222;overflow:auto;"></div>
+		<h2>Graph</h2>
+		<div id="graph" style="width:100%;overflow:auto;"></div>
+		<h2>JSON-LD</h2>
+		<div id="jsonld" style="width:100%;white-space:pre;background-color:#333;color:white;overflow:auto;"></div>
+
+</div>			
+			
+		
+		
+		
+<script>
+	
+//----------------------------------------------------------------------------------------
+// START COUCHDB VIEW
+function message(doc) {
+  if (doc['message-format'] == 'application/vnd.citationstyles.csl+json') {
+    if (doc.message.DOI) {
+    
+    	// use ORCID work id
+      var subject_id = 'https://orcid.org/' + doc._id;
+    
+      for (var i in doc.message.author) {
+        if (doc.message.author[i].ORCID) {
+          // ignore cases where author is actually all the authors
+          var go = true;
+          if (doc.message.author[i].literal.match(/ and /)) {
+            go = false;
+          }
+          if (go) {
+
+            // we want simple triples linking name to position in author list
+            var triples = [];
+            
+                        
+            // identifier 
+			var identifier_id = subject_id + '#doi';
+
+			triples.push(triple(
+			  subject_id,
+			  'http://schema.org/identifier',
+			  identifier_id));
+
+			triples.push(triple(
+			  identifier_id,
+			  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+			  'http://schema.org/PropertyValue'));
+
+			triples.push(triple(
+			  identifier_id,
+			  'http://schema.org/propertyID',
+			  'doi'));
+
+			triples.push(triple(
+			  identifier_id,
+			  'http://schema.org/value',
+			  doc.message.DOI.toLowerCase()
+			));                
+            
+            
+            
+            
+            var index = parseInt(i) + 1;
+            var role_id    = subject_id + '#role/' + index;
+            var creator_id = 'https://orcid.org/' + doc.message.author[i].ORCID;
+            
+            triples.push(triple(
+            	subject_id,
+                'http://schema.org/creator',
+                role_id)
+                );
+
+            triples.push(triple(
+            	role_id,
+                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                'http://schema.org/Role')
+                );
+
+            triples.push(triple(
+            	role_id,
+                'http://schema.org/roleName',
+                String(index)
+                ));
+
+            triples.push(triple(
+            	role_id,
+                'http://schema.org/creator',
+                creator_id
+                ));
+                                
+			  // type, need to handle organisations as authors
+			  triples.push(triple(
+			  	creator_id,
+				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+				'http://schema.org/Person'));
+
+			  triples.push(triple(
+			  	creator_id,
+				'http://schema.org/name',
+				doc.message.author[i].literal));
+
+                
+				identifier_id = creator_id + '#orcid';
+
+				triples.push(triple(
+				  creator_id,
+				  'http://schema.org/identifier',
+				  identifier_id));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+				  'http://schema.org/PropertyValue'));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/propertyID',
+				  'orcid'));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/value',
+				  doc.message.author[i].ORCID
+				));                
+			
+                
+                
+            output(doc, triples);
+
+          }
+        }
+      }
+    }
+  }
+}
+
+function couchdb(doc) {
+	message(doc);
+}
+// END COUCHDB VIEW
+
+		
+//----------------------------------------------------------------------------------------
+function convert() {
+	var json = $('#json').val();
+	var doc = JSON.parse(json);
+	
+	console.log(JSON.stringify(doc, null, 2));
+	
+	couchdb(doc);
+}
+
+	
+	</script>		
+			
+
+</div>
+</body>
+</html>			

@@ -1,0 +1,269 @@
+<html>
+	<head>
+		<title>Wikispecies reference DOI to author role</title>
+		<meta charset="UTF-8"/>
+		<script src="jquery.js"></script>
+		<script src="jsonld.js"></script>
+		<script src="viz.js"></script>
+		<!-- stuff below needs to go into CouchDB views -->
+		<script src="shared.js"></script>
+		<script src="language.js"></script>
+		<style>
+		td { border: 1px solid red; }
+		</style>
+	</head>
+<body>
+
+<h1>Wikispecies reference DOI to author role</h1>
+
+<div>
+	<div style="width:100%;height:auto;">
+		<h2>JSON</h2>
+			<!-- JSON for data object goes below -->
+			<textarea id="json" style="width:100%;background-color:#224FBC;color:#FFFF66;" rows="20">{
+  "_id": "Template:Raven_%26_Stumkat,_2002",
+  "_rev": "1-2d0a9a39c096da46d5f2a3d5ea65bf75",
+  "title": "Template:Raven & Stumkat, 2002",
+  "timestamp": "2015-09-01T13:55:40Z",
+  "references": [
+    {
+      "string": "* {{a|Robert J. Raven|Raven, R.J.}}, {{a|Kylie S. Stumkat|Stumkat, K.S.}} 2002: ''Pteroneta'' Deeleman-Reinhold and a remarkable sympatric Clubiona (Clubionidae: Araneomorphae: Arachnida) in northern Australia. [[ISSN 0079-8835|''Memoirs of The Queensland Museum'']], '''48''': 199-206.[http://www.biodiversitylibrary.org/page/40460790#page/201/mode/1up full article (pdf BHL)]. <includeonly>[http://species.wikimedia.org/wiki/Template:Raven_%26_Stumkat,_2002 reference page]</includeonly>&nbsp;<noinclude>",
+      "csl": {
+        "status": "ok",
+        "source": "Wikispecies",
+        "unstructured": "Robert J. Raven, Kylie S. Stumkat 2002: Pteroneta Deeleman-Reinhold and a remarkable sympatric Clubiona (Clubionidae: Araneomorphae: Arachnida) in northern Australia. Memoirs of The Queensland Museum, 48: 199-206. full article (pdf BHL). ,_2002 reference page",
+        "author": [
+          {
+            "literal": "Raven, R.J.",
+            "WIKISPECIES": "Robert_J._Raven"
+          },
+          {
+            "literal": "Stumkat, K.S.",
+            "WIKISPECIES": "Kylie_S._Stumkat"
+          }
+        ],
+        "alternative-id": [
+          "WIKISPECIES:Template:Raven_%26_Stumkat,_2002"
+        ],
+        "volume": "48",
+        "page": "199-206",
+        "ISSN": [
+          "0079-8835"
+        ],
+        "title": "<i>Pteroneta</i> Deeleman-Reinhold and a remarkable sympatric Clubiona (Clubionidae: Araneomorphae: Arachnida) in northern Australia",
+        "WIKISPECIES": "Template:Raven_%26_Stumkat,_2002",
+        "issued": {
+          "date-parts": [
+            [
+              2002
+            ]
+          ]
+        },
+        "container-title": "Memoirs of The Queensland Museum",
+        "type": "article-journal",
+        "page-first": "199"
+      }
+    }
+  ],
+  "text": "* {{a|Robert J. Raven|Raven, R.J.}}, {{a|Kylie S. Stumkat|Stumkat, K.S.}} 2002: ''Pteroneta'' Deeleman-Reinhold and a remarkable sympatric Clubiona (Clubionidae: Araneomorphae: Arachnida) in northern Australia. [[ISSN 0079-8835|''Memoirs of The Queensland Museum'']], '''48''': 199-206.[http://www.biodiversitylibrary.org/page/40460790#page/201/mode/1up full article (pdf BHL)]. <includeonly>[http://species.wikimedia.org/wiki/Template:Raven_%26_Stumkat,_2002 reference page]</includeonly>&nbsp;<noinclude>\n** [http://species.wikimedia.org/wiki/Special:WhatLinksHere/Template:{{BASEPAGENAMEE}} find all Wikispecies pages which cite this reference][[Category:Reference templates]]</noinclude>",
+  "categories": [
+    "Reference templates"
+  ]
+}</textarea>
+			<br />
+			<button onclick="convert()">Convert JSON to RDF</button>
+	</div>
+	<div style="clear:both;"></div>
+	
+	<div style="width:100%;">
+		<h2>Triples</h2>
+		<div id="output" style="width:100%;background-color:#FF7;color:#222;overflow:auto;"></div>
+		<h2>Graph</h2>
+		<div id="graph" style="width:100%;overflow:auto;"></div>
+		<h2>JSON-LD</h2>
+		<div id="jsonld" style="width:100%;white-space:pre;background-color:#333;color:white;overflow:auto;"></div>
+
+</div>			
+			
+		
+		
+		
+<script>
+	
+//----------------------------------------------------------------------------------------
+// START COUCHDB VIEW
+function message(doc) {
+ if (doc.references) {
+    for (var i in doc.references) {
+       if (doc.references[i].csl) {
+       
+         var identifiers = {};
+         if (doc.references[i].csl.DOI) {
+       		identifiers['doi'] = doc.references[i].csl.DOI.toLowerCase();
+       	 }
+       	 
+       	 if (doc.references[i].csl.ISSN 
+       	 	&& doc.references[i].csl.volume
+       	 	&& doc.references[i].csl['page-first']
+       	 	&& doc.references[i].csl.issued
+       	 	 ) {
+       	 	 
+            var sici = [];
+            sici.push(doc.references[i].csl.ISSN[0]);
+			sici.push('(' + doc.references[i].csl.issued['date-parts'][0][0] + ')');
+            sici.push(doc.references[i].csl.volume);
+            sici.push('<' + doc.references[i].csl['page-first'] + '>');
+            
+            identifiers['sici'] = sici.join('');
+       	 }
+         
+         for (var k in identifiers) {
+      	
+      	    // eventually handle other kinds of identifiers
+      	
+      		var triples = [];
+      		
+      		var index = parseInt(i) + 1;
+      		
+      		var subject_id = 'https://species.wikimedia.org/wiki/' + doc._id;
+      		
+      		if (doc.references.length > 1) {      		
+      		 subject_id += '#references/' + index;
+      		}
+      		
+      		
+      		var identifier_id = subject_id + '#' + k;
+      	
+           if (doc.references[i].csl.author) {
+              for (var j in doc.references[i].csl.author) {
+                if (doc.references[i].csl.author[j].WIKISPECIES) {
+                
+                  // do something here...
+           
+           		 // we want simple triples linking name to position in author list
+           		 
+           		 // identifier
+           		 
+				triples.push(triple(
+				  subject_id,
+				  'http://schema.org/identifier',
+				  identifier_id));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+				  'http://schema.org/PropertyValue'));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/propertyID',
+				  k));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/value',
+				  identifiers[k]
+				));            		 
+
+				var author_index = parseInt(j) + 1;
+				var role_id    = subject_id + '#role/' + author_index;
+				var creator_id = 'https://species.wikimedia.org/wiki/' + doc.references[i].csl.author[j].WIKISPECIES;
+			
+				triples.push(triple(
+					subject_id,
+					'http://schema.org/creator',
+					role_id)
+					);
+
+				triples.push(triple(
+					role_id,
+					'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+					'http://schema.org/Role')
+					);
+
+				triples.push(triple(
+					role_id,
+					'http://schema.org/roleName',
+					String(author_index)
+					));
+
+            triples.push(triple(
+            	role_id,
+                'http://schema.org/creator',
+                creator_id
+                ));
+                                
+			  // type, need to handle organisations as authors
+			  triples.push(triple(
+			  	creator_id,
+				'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+				'http://schema.org/Person'));
+
+			  triples.push(triple(
+			  	creator_id,
+				'http://schema.org/name',
+				doc.references[i].csl.author[j].literal));
+
+                
+				identifier_id = creator_id + '#wikispecies';
+
+				triples.push(triple(
+				  creator_id,
+				  'http://schema.org/identifier',
+				  identifier_id));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+				  'http://schema.org/PropertyValue'));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/propertyID',
+				  'wikispecies'));
+
+				triples.push(triple(
+				  identifier_id,
+				  'http://schema.org/value',
+				  doc.references[i].csl.author[j].WIKISPECIES
+				)); 
+					
+
+
+				output(doc, triples);
+                 
+                }
+              }  
+            }
+         }
+       }
+    }
+  }
+}     
+ 
+ 
+
+
+function couchdb(doc) {
+	message(doc);
+}
+// END COUCHDB VIEW
+
+		
+//----------------------------------------------------------------------------------------
+function convert() {
+	var json = $('#json').val();
+	var doc = JSON.parse(json);
+	
+	console.log(JSON.stringify(doc, null, 2));
+	
+	couchdb(doc);
+}
+
+	
+	</script>		
+			
+
+</div>
+</body>
+</html>			
