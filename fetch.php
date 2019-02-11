@@ -7,15 +7,32 @@ error_reporting(E_ALL);
 require_once (dirname(__FILE__) . '/lib.php');
 require_once (dirname(__FILE__) . '/store.php');
 
-$force = true;
 
 $page_names = array();
 
+// Find pages that link to a DOI and build page list
 if (0)
 {
 	$dois=array('10.4039/Ent112875-9');
 
 	$dois = array('10.11646/zootaxa.3680.1.12');
+	
+	// from file
+	if (1)
+	{
+		$dois = array();
+		
+		$filename = 'zootaxa-doi.txt';
+		$filename = 'zookeys-doi.txt';
+		$filename = 'doi.txt';
+	
+		$file_handle = fopen($filename, "r");
+		while (!feof($file_handle)) 
+		{
+			$doi = trim(fgets($file_handle));
+			$dois[] = $doi;
+		}
+	}	
 
 	foreach ($dois as $doi)
 	{
@@ -49,11 +66,57 @@ if (0)
 	}
 
 	print_r($page_names);
+	
+	file_put_contents('pages.txt', join("\n",$page_names));
 }
 
+/*
 $page_names = array('Kylie_S._Stumkat');
+$page_names = array('Valerie_Todd_Davies');
+$page_names = array('Renaud_Maurice_Adrien_Paulian');
+$page_names = array('Pekka_T._Lehtinen');
+*/
+
+/*
+$page_names = array(
+'Günther_Theischinger',
+'Rudy_Jocqué',
+'Martin_Baehr',
+'Barbara_C._Baehr',
+'Barbara_York_Main',
+'Steven_J.B._Cooper'
+);
+
+$page_names = array(
+'Gary_C.B._Poore'
+);
+*/
+
+$page_names = array(
+'Randall_Tobias_Schuh'
+);
+
+// Read list of page names
+if (0)
+{
+	$page_names = array();
+	
+	$filename = 'pages.txt';
+
+	$file_handle = fopen($filename, "r");
+	while (!feof($file_handle)) 
+	{
+		$page_names[] = trim(fgets($file_handle));
+	}
+
+}
 
 $include_transclusions = true;
+//$include_transclusions = false;
+
+$force = true;
+$force = false;
+
 
 while (count($page_names) > 0)
 {
@@ -170,7 +233,7 @@ while (count($page_names) > 0)
 	//print_r($obj);
 	
 	
-	process_references($obj, true);
+	process_references($obj, $force);
 									
 	//$include_transclusions = false; // only do this the first time
 

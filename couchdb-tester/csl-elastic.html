@@ -1,0 +1,412 @@
+<html>
+	<head>
+		<title>References to Elastic</title>
+		<meta charset="UTF-8"/>
+		<script src="jquery.js"></script>
+		<script src="jsonld.js"></script>
+		<script src="viz.js"></script>
+		<!-- stuff below needs to go into CouchDB views -->
+		<script src="shared.js"></script>
+		<script src="language.js"></script>
+		<style>
+		td { border: 1px solid red; }
+		</style>
+	</head>
+<body>
+
+<h1>References to Elastic</h1>
+
+<div>
+	<div style="width:100%;height:auto;">
+		<h2>JSON</h2>
+			<!-- JSON for data object goes below -->
+			<textarea id="json" style="width:100%;background-color:#224FBC;color:#FFFF66;" rows="20">{
+  "_id": "Template:Jochum_et_al.,_2014",
+  "_rev": "1-40185fdf3fd0bb8c27078f95a17b072c",
+  "title": "Template:Jochum et al., 2014",
+  "timestamp": "2017-10-12T08:43:27Z",
+  "references": [
+    {
+      "string": "* {{a|Adrienne Jochum|Jochum, A.}}, {{a|Rajko Slapnik|Slapnik, R.}}, {{a|Marian Kampschulte|Kampschulte, M.}}, {{a|Gunhild Martels|Martels, G.}}, {{a| Markus Heneka|Heneka, M.}} & {{a| Barna Páll-Gergely|Páll-Gergely, B.}} 2014. A review of the microgastropod genus ''Systenostoma'' Bavay & Dautzenberg, 1908 and a new subterranean species from China (Gastropoda, Pulmonata, Hypselostomatidae). [[ISSN 1313-2989|''ZooKeys'']] 410: 23–40. {{doi|10.3897/zookeys.410.7488}} <includeonly>[http://species.wikimedia.org/wiki/Template:Jochum_et_al.,_2014 reference page]</includeonly>&nbsp;<noinclude>",
+      "csl": {
+        "status": "ok",
+        "source": "Wikispecies",
+        "unstructured": "Adrienne Jochum, Rajko Slapnik, Marian Kampschulte, Gunhild Martels, Markus Heneka & Barna Páll-Gergely 2014. A review of the microgastropod genus Systenostoma Bavay & Dautzenberg, 1908 and a new subterranean species from China (Gastropoda, Pulmonata, Hypselostomatidae). ZooKeys 410: 23–40. ,_2014 reference page",
+        "author": [
+          {
+            "literal": "Jochum, A.",
+            "WIKISPECIES": "Adrienne_Jochum"
+          },
+          {
+            "literal": "Slapnik, R.",
+            "WIKISPECIES": "Rajko_Slapnik"
+          },
+          {
+            "literal": "Kampschulte, M.",
+            "WIKISPECIES": "Marian_Kampschulte"
+          },
+          {
+            "literal": "Martels, G.",
+            "WIKISPECIES": "Gunhild_Martels"
+          },
+          {
+            "literal": "Heneka, M.",
+            "WIKISPECIES": "_Markus_Heneka"
+          },
+          {
+            "literal": "Páll-Gergely, B.",
+            "WIKISPECIES": "_Barna_Páll-Gergely"
+          }
+        ],
+        "alternative-id": [
+          "DOI:10.3897/zookeys.410.7488",
+          "WIKISPECIES:Template:Jochum_et_al.,_2014"
+        ],
+        "volume": "410",
+        "page": "23-40",
+        "ISSN": [
+          "1313-2989"
+        ],
+        "DOI": "10.3897/zookeys.410.7488",
+        "title": "A review of the microgastropod genus <i>Systenostoma</i> Bavay & Dautzenberg, 1908 and a new subterranean species from China (Gastropoda, Pulmonata, Hypselostomatidae)",
+        "WIKISPECIES": "Template:Jochum_et_al.,_2014",
+        "issued": {
+          "date-parts": [
+            [
+              2014
+            ]
+          ]
+        },
+        "container-title": "ZooKeys",
+        "type": "article-journal",
+        "page-first": "23"
+      }
+    }
+  ],
+  "text": "* {{a|Adrienne Jochum|Jochum, A.}}, {{a|Rajko Slapnik|Slapnik, R.}}, {{a|Marian Kampschulte|Kampschulte, M.}}, {{a|Gunhild Martels|Martels, G.}}, {{a| Markus Heneka|Heneka, M.}} & {{a| Barna Páll-Gergely|Páll-Gergely, B.}} 2014. A review of the microgastropod genus ''Systenostoma'' Bavay & Dautzenberg, 1908 and a new subterranean species from China (Gastropoda, Pulmonata, Hypselostomatidae). [[ISSN 1313-2989|''ZooKeys'']] 410: 23–40. {{doi|10.3897/zookeys.410.7488}} <includeonly>[http://species.wikimedia.org/wiki/Template:Jochum_et_al.,_2014 reference page]</includeonly>&nbsp;<noinclude>\n** [http://species.wikimedia.org/wiki/Special:WhatLinksHere/Template:{{BASEPAGENAMEE}} find all Wikispecies pages which cite this reference]</noinclude>"
+}</textarea>
+			<br />
+			<button onclick="convert()">Convert JSON to RDF</button>
+	</div>
+	<div style="clear:both;"></div>
+	
+	<div style="width:100%;">
+		<h2>Triples</h2>
+		<div id="output" style="width:100%;background-color:#FF7;color:#222;overflow:auto;"></div>
+		<h2>Graph</h2>
+		<div id="graph" style="width:100%;overflow:auto;"></div>
+		<h2>JSON-LD</h2>
+		<div id="jsonld" style="width:100%;white-space:pre;background-color:#333;color:white;overflow:auto;"></div>
+
+</div>			
+			
+		
+		
+		
+<script>
+	
+//----------------------------------------------------------------------------------------
+// START COUCHDB VIEW
+//----------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------
+function add_values(elastic_search_doc, key, value, boost) {
+	elastic_search_doc.search_data.fulltext_values.push(value);
+	
+	boosted = (typeof boost !== 'undefined') ?  boost : false;
+	
+	if (boosted) {
+		elastic_search_doc.search_data.fulltext_boosted_values.push(value);
+	}
+	
+	switch (key) {
+		case 'container':
+		case 'author':
+			elastic_search_doc.search_data[key].push(value);
+			break;
+
+		case 'year':
+			elastic_search_doc.search_data[key] = value;
+			break;
+	
+		default:
+			break;
+	}
+	
+	return elastic_search_doc;
+}
+
+//----------------------------------------------------------------------------------------
+function cls_to_elastic(work) {
+
+    var elastic_search_doc = {};
+    
+    if (work.id) {
+      elastic_search_doc.id = work.id;
+    }
+    
+    // type of document
+    switch (work.type) {
+       case 'article-journal':
+         elastic_search_doc.type = 'article';
+         break;
+         
+       default:
+         elastic_search_doc.type = work.type;
+         break;
+    
+    }
+    
+    
+	// output to display in list of hits
+	elastic_search_doc.search_result_data = {};
+	
+	// possible fields to hold information on how to display this object
+	elastic_search_doc.search_result_data.name = '';
+	elastic_search_doc.search_result_data.description = '';
+	elastic_search_doc.search_result_data.creator = [];
+	elastic_search_doc.search_result_data.thumbnailUrl = '';
+	elastic_search_doc.search_result_data.url = '';
+	
+	// temporary
+	elastic_search_doc.search_result_data.description_parts = [];
+	
+	/*
+	if ($url)
+	{
+		$doc->search_result_data->url = $url;
+	}
+	*/
+
+	// fields that will be searched on
+	elastic_search_doc.search_data = {};
+	
+	// text fields for searching on
+	elastic_search_doc.search_data.fulltext_values = [];
+	elastic_search_doc.search_data.fulltext_boosted_values = [];
+	
+	// things to use as facets
+	elastic_search_doc.search_data.container = [];
+	elastic_search_doc.search_data.author = [];
+	elastic_search_doc.search_data.year = null;
+	
+	
+	// regular
+	
+	
+	// title
+	// multiple lnanguages?
+    if (work.multi && work.multi._key.title) {
+      	var title = [];
+    	for (var language in work.multi._key.title) {
+    		title.push(work.multi._key.title[language]);
+			elastic_search_doc = add_values(elastic_search_doc, 'title', work.multi._key.title[language], true);      		
+    	}
+    	elastic_search_doc.search_result_data.name = title.join(' / ');
+    } else {
+		if (work.title) {
+			if (Array.isArray(work.title)) {
+				elastic_search_doc = add_values(elastic_search_doc, 'title', work.title[0], true);  
+			
+				elastic_search_doc.search_result_data.name = work.title[0];
+			} else {
+				elastic_search_doc = add_values(elastic_search_doc, 'title', work.title, true);
+
+				elastic_search_doc.search_result_data.name = work.title;
+			}
+		}
+	}
+	
+	// container
+    if (work.multi && work.multi._key['container-title']) {
+      	var container = [];
+      	
+    	for (var language in work.multi._key['container-title']) {
+    		container.push(work.multi._key['container-title'][language]);
+    		elastic_search_doc = add_values(elastic_search_doc, 'container', work.multi._key['container-title'][language], true);  
+    	}
+		elastic_search_doc.search_result_data.description_parts.push('in ' + container.join(' / '));
+      	
+	} else {
+		
+		if (work['container-title']) {
+			var container = '';
+			if (Array.isArray(work['container-title'])) {
+				container = work['container-title'][0];          
+			} else {
+				container = work['container-title']; 		
+			}
+			elastic_search_doc = add_values(elastic_search_doc, 'container', container, true);
+			elastic_search_doc.search_result_data.description_parts.push('in ' + container);	
+		}
+	}
+	
+	// abstract
+    if (work.multi && work.multi._key.abstract) {
+    	for (var language in work.multi._key['container-title']) {
+    		elastic_search_doc = add_values(elastic_search_doc, 'abstract', work.multi._key.abstract[language], false);  
+    	}
+	} else {		
+		if (work.abstract) {
+			elastic_search_doc = add_values(elastic_search_doc, 'abstract', work.abstract, false);
+		}
+	}
+	
+	
+	// author
+	if (work.author) {
+		for (var i in work.author) {
+			// do we have multiple languages?
+    		if (work.author[i].multi) {
+    		  var author = [];
+    		  for (var language in work.author[i].multi._key.literal) {
+    			elastic_search_doc = add_values(
+    				elastic_search_doc, 
+    				'author', work.author[i].multi._key.literal[language], true); 
+    				author.push(work.author[i].multi._key.literal[language]);
+    			
+    		}
+    		elastic_search_doc.search_result_data.creator.push(author.join(' / '));
+    	} else {
+    		// simple case
+    		var name = [];
+    		
+    		if (work.author[i].given) {
+    			name.push(work.author[i].given);
+    		}
+     		if (work.author[i].family) {
+    			name.push(work.author[i].family);
+    		}
+    		
+    		
+
+			// just use literal if we have it
+     		if (work.author[i].literal) {
+    			name = [work.author[i].literal];
+    		}
+    		
+    		if (name.length > 0) {
+    			add_values(elastic_search_doc, 'author', name.join(' '), true); 
+    			elastic_search_doc.search_result_data.creator.push(name.join(' '));
+    		}
+
+		}
+		}
+	
+	}
+		
+	//------------------------------------------------------------------------------------
+
+	// date
+	if (work.issued) {
+		if (work.issued['date-parts']) {
+			var year = work.issued['date-parts'][0][0];
+
+			elastic_search_doc = add_values(elastic_search_doc, 'year', year);
+			
+			elastic_search_doc.search_result_data.description_parts.push('in ' + year);		
+		}
+	} 
+
+	// volume
+	if (work.volume) {
+		elastic_search_doc = add_values(elastic_search_doc, 'volume', work.volume);		
+		elastic_search_doc.search_result_data.description_parts.push('in volume ' + work.volume);		
+	} 
+
+	// issue
+	if (work.issue) {
+		elastic_search_doc = add_values(elastic_search_doc, 'issue', work.issue);		
+		elastic_search_doc.search_result_data.description_parts.push('issue ' + work.issue);		
+	} 
+
+	// page
+	if (work.page) {
+		elastic_search_doc = add_values(elastic_search_doc, 'page', work.page);
+		var prefix = 'page';
+		if (work.page.match(/-/)) {
+			prefix = 'pages';
+		}
+		elastic_search_doc.search_result_data.description_parts.push(prefix + ' ' + work.page);		
+	} 
+
+	// DOI
+	if (work.DOI) {
+		elastic_search_doc = add_values(elastic_search_doc, 'doi', work.DOI);		
+		
+		elastic_search_doc.search_result_data.doi = work.DOI;
+	} 
+
+	//------------------------------------------------------------------------------------
+	
+	// cleanup
+	elastic_search_doc.search_data.fulltext = elastic_search_doc.search_data.fulltext_values.join(' ');
+	delete elastic_search_doc.search_data.fulltext_values;
+
+	elastic_search_doc.search_data.fulltext_boosted = elastic_search_doc.search_data.fulltext_boosted_values.join(' ');
+	delete elastic_search_doc.search_data.fulltext_boosted_values;
+	
+	elastic_search_doc.search_result_data.description = 'Published ' + elastic_search_doc.search_result_data.description_parts.join(', ');
+	delete elastic_search_doc.search_result_data.description_parts;
+	
+	if (!elastic_search_doc.search_result_data.creator) {
+		delete elastic_search_doc.search_result_data.creator;
+	}
+	
+	if (!elastic_search_doc.search_result_data.thumbnailUrl) {
+		delete elastic_search_doc.search_result_data.thumbnailUrl;
+	}
+
+	if (!elastic_search_doc.search_result_data.url) {
+		delete elastic_search_doc.search_result_data.url;
+	}
+	
+	$('#jsonld').html(JSON.stringify(elastic_search_doc, null, 2));
+	//emit(elastic_search_doc.id, elastic_search_doc)
+    
+
+  
+}
+
+
+function couchdb(doc) {
+  if (doc.references) {
+    for (var i in doc.references) {
+       if (doc.references[i].csl) {
+         if (doc.references[i].csl.status == 'ok') {
+         
+		var id = doc._id;
+		if (!id.match(/^Template/)) {
+			id = doc._id + '#' + (i+1);
+		}
+		
+		doc.references[i].csl.id = id;
+          
+          cls_to_elastic(doc.references[i].csl);
+         }
+      }
+    }
+  }
+
+}
+// END COUCHDB VIEW
+
+		
+//----------------------------------------------------------------------------------------
+function convert() {
+	var json = $('#json').val();
+	var doc = JSON.parse(json);
+	
+	console.log(JSON.stringify(doc, null, 2));
+	
+	couchdb(doc);
+}
+
+	
+	</script>		
+			
+
+</div>
+</body>
+</html>			
